@@ -2,7 +2,6 @@
 	---			Declerations			---
 ---------------------------------
 
-local L = AceLibrary("AceLocale-2.2"):new("AuctionLink")
 AuctionLink = AceLibrary("AceAddon-2.0"):new("AceConsole-2.0", "AceDB-2.0", "AceHook-2.1", "AceEvent-2.0")
 
 ---------------------------------
@@ -286,7 +285,7 @@ function AuctionLink:EngInventory(mouseButton, ignoreModifiers)
 		if(IsAltKeyDown()) then
 			name = string.gsub(name, " of.-$", "") 
 		end
-		if(self.GetOpt("autoSearch")) then
+		if(self.db.profile.autosearch) then
 			QueryAuctionItems(name)
 			BrowseName:SetText(name)
 		else

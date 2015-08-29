@@ -1,6 +1,6 @@
 --[[
 Name: AceHook-2.1
-Revision: $Rev: 14013 $
+Revision: $Rev: 16186 $
 Developed by: The Ace Development Team (http://www.wowace.com/index.php/The_Ace_Development_Team)
 Inspired By: Ace 1.x by Turan (turan@gryphon.com)
 Website: http://www.wowace.com/
@@ -11,7 +11,7 @@ Dependencies: AceLibrary, AceOO-2.0
 ]]
 
 local MAJOR_VERSION = "AceHook-2.1"
-local MINOR_VERSION = "$Revision: 14013 $"
+local MINOR_VERSION = "$Revision: 16186 $"
 
 -- This ensures the code is only executed if the libary doesn't already exist, or is a newer version
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
@@ -401,7 +401,7 @@ local function unhookMethod(self, obj, method)
 				actives[uid] = nil
 			end
 		else
-			if self.hooks[obj][method] and obj[method] == uid then
+			if self.hooks[obj] and self.hooks[obj][method] and obj[method] == uid then
 				-- We own the method.  Revert to normal.
 				obj[method] = self.hooks[obj][method]
 				self.hooks[obj][method] = nil
@@ -413,7 +413,7 @@ local function unhookMethod(self, obj, method)
 			end
 		end
 	end
-	if not next(self.hooks[obj]) then
+	if self.hooks[obj] and not next(self.hooks[obj]) then
 		self.hooks[obj] = del(self.hooks[obj])
 	end
 	if not next(registry[self][obj]) then
@@ -431,6 +431,8 @@ function AceHook:Hook(object, method, handler, hookSecure)
 		if not hookSecure and issecurevariable(method) then
 			AceHook:error("Attempt to hook secure function %q. Use `SecureHook' or add `true' to the argument list to override.", method)
 		end
+		AceHook:argCheck(handler, 3, "function", "string", "nil")
+		AceHook:argCheck(hookSecure, 4, "boolean", "nil")
 		hookFunction(self, method, handler, false)
 	else
 		if handler == true then
@@ -439,6 +441,10 @@ function AceHook:Hook(object, method, handler, hookSecure)
 		if not hookSecure and issecurevariable(object, method) then
 			AceHook:error("Attempt to hook secure method %q. Use `SecureHook' or add `true' to the argument list to override.", method)
 		end
+		AceHook:argCheck(object, 2, "table")
+		AceHook:argCheck(method, 3, "string")
+		AceHook:argCheck(handler, 4, "function", "string", "nil")
+		AceHook:argCheck(hookSecure, 5, "boolean", "nil")
 		hookMethod(self, object, method, handler, false, false)
 	end
 end
@@ -447,8 +453,12 @@ end
 function AceHook:SecureHook(object, method, handler)
 	if type(object) == "string" then
 		method, handler = object, method
+		AceHook:argCheck(handler, 3, "function", "string", "nil")
 		hookFunction(self, method, handler, true)
 	else
+		AceHook:argCheck(object, 2, "table")
+		AceHook:argCheck(method, 3, "string")
+		AceHook:argCheck(handler, 4, "function", "string", "nil")
 		hookMethod(self, object, method, handler, false, true)
 	end
 end
@@ -458,6 +468,8 @@ function AceHook:HookScript(frame, script, handler)
 	if not frame[0] or type(frame.IsFrameType) ~= "function" then
 		AceHook:error("Bad argument #2 to `HookScript'. Expected frame.")
 	end
+	AceHook:argCheck(script, 3, "string")
+	AceHook:argCheck(handler, 4, "function", "string", "nil")
 	hookMethod(self, frame, script, handler, true, false)
 end
 
@@ -468,6 +480,8 @@ function AceHook:IsHooked(obj, method)
 			return true, handlers[registry[self][obj]]
 		end
 	else
+		AceHook:argCheck(obj, 2, "string", "table")
+		AceHook:argCheck(method, 3, "string")
 		if registry[self][obj] and registry[self][obj][method] and actives[registry[self][obj][method]] then
 			return true, handlers[registry[self][obj][method]]
 		end
@@ -477,16 +491,18 @@ function AceHook:IsHooked(obj, method)
 end
 
 -- ("function") or (object, "method")
-function AceHook:Unhook(arg1, arg2)
-	if type(arg1) == "string" then
-		unhookFunction(self, arg1)
+function AceHook:Unhook(obj, method)
+	if type(obj) == "string" then
+		unhookFunction(self, obj)
 	else
-		unhookMethod(self, arg1, arg2)
+		AceHook:argCheck(obj, 2, "string", "table")
+		AceHook:argCheck(method, 3, "string")
+		unhookMethod(self, obj, method)
 	end
 end
 
 function AceHook:UnhookAll()
-	for key, value in pairs(self.hooks) do
+	for key, value in pairs(registry[self]) do
 		if type(key) == "table" then
 			for method in pairs(value) do
 				self:Unhook(key, method)
@@ -532,8 +548,6 @@ end
 local function activate(self, oldLib, oldDeactivate)
 	AceHook = self
 	
-	AceHook.super.activate(self, oldLib, oldDeactivate)
-	
 	self.handlers = oldLib and oldLib.handlers or {}
 	self.registry = oldLib and oldLib.registry or {}
 	self.scripts = oldLib and oldLib.scripts or {}
@@ -543,6 +557,8 @@ local function activate(self, oldLib, oldDeactivate)
 	registry = self.registry
 	scripts = self.scripts
 	actives = self.actives
+	
+	AceHook.super.activate(self, oldLib, oldDeactivate)
 	
 	if oldDeactivate then
 		oldDeactivate(oldLib)
