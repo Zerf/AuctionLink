@@ -292,7 +292,7 @@ function AuctionLink:EngInventory(mouseButton, ignoreModifiers)
 			BrowseName:SetText(name)
 		end
 	else
-		self:CallHook("EngInventory_ItemButton_OnClick", mouseButton, ignoreModifiers)
+		self.hooks.EngInventory_ItemButton_OnClick(mouseButton, ignoreModifiers)
 	end
 end
 
