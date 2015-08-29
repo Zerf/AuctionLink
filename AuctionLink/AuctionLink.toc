@@ -2,7 +2,7 @@
 ## Title: AuctionLink |cff7fff7f -Ace2-|r
 ## Notes: Allows you to shift-click items to put the names in the auction search box
 ## Author: Rothon
-## Version 2.0
+## Version 2.0.1
 ## X-Category: Auction
 ## LoadOnDemand: 1
 ## SavedVariables: AuctionLinkDB
